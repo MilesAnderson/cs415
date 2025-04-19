@@ -2,12 +2,18 @@
 #include <stdlib.h>
 
 int main(){
-    char *buf;
-    size_t bufsize;
-    size_t characters;
+    char *line = NULL;
+    size_t len = 0;
+    ssize_t read;
 
     printf(">>> ");
-    characters = getline(&buf, &bufsize, stdin);
-    printf("%s\n", buf);
 
+    read = getline(&line, &len, stdin);
+    if(read == -1){
+        perror(line);
+    }
+
+    printf("%s\n", line);
+
+    free(line);
 }
