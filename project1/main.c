@@ -1,8 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "string_parser.h"
 
 int main(int argc, char *argv[]){
+    //Interactive Shell
     if(argc == 1){
         char *line = NULL;
         size_t len = 0;
@@ -21,11 +23,17 @@ int main(int argc, char *argv[]){
                 whileparam++;
             }
 
-            printf("%s\n", line);
+            command_line test;
+            test = str_filler(line, " ");
+            int i = 0;
+            while(test.command_list[i] != NULL){
+                printf("%s\n", test.command_list[i]);
+            }
         }
 
         free(line);
     }
+    //File Mode
     else if(argc > 1){
         //Check paramaters
         if(strcmp(argv[1], "-f") != 0){
@@ -51,7 +59,7 @@ int main(int argc, char *argv[]){
 
 
         FILE* output;
-        output = fopen("output.txt", "w");
+        output = freopen("output.txt", "w", stdout);
         if(output == NULL){
             printf("Something went wrong when creating the output file");
             return 1; 
@@ -62,9 +70,8 @@ int main(int argc, char *argv[]){
         ssize_t read;
 
         while((read = getline(&line, &len, input)) != -1){
-            //Strip newline
-            //line[strcspn(line, "\n")] = '\0';
-            fputs(line, output);
+            int num_tokens = count_token(line, " ");
+            fprintf(stdout, "This line had %d tokens\n", num_tokens);
         }
 
         free(line);
