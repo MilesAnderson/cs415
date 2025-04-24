@@ -40,7 +40,7 @@ command_line str_filler(char* buf, const char* delim){
     }
     ret.num_token = count_token(buf, delim);
 
-    ret.command_list = (char**)malloc(sizeof(char*) * ret.num_token+1);
+    ret.command_list = (char**)malloc(sizeof(char*) * (ret.num_token+1));
 
     char* ptr;
     char* token = strtok_r(buf, delim, &ptr);
