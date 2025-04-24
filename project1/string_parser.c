@@ -46,10 +46,10 @@ command_line str_filler(char* buf, const char* delim){
     char* token = strtok_r(buf, delim, &ptr);
     int i = 0;
     while(token != NULL){
-        token = strtok_r(NULL, delim, &ptr);
         ret.command_list[i] = (char*)malloc(sizeof(char) * strlen(token)+1);
         strcpy(ret.command_list[i], token);
         i++;
+        token = strtok_r(NULL, delim, &ptr);
     }
     ret.command_list[ret.num_token] = NULL;
     return ret;

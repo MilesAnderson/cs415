@@ -28,7 +28,9 @@ int main(int argc, char *argv[]){
             int i = 0;
             while(test.command_list[i] != NULL){
                 printf("%s\n", test.command_list[i]);
+                i++;
             }
+            free_command_line(&test);
         }
 
         free(line);
@@ -70,8 +72,14 @@ int main(int argc, char *argv[]){
         ssize_t read;
 
         while((read = getline(&line, &len, input)) != -1){
-            int num_tokens = count_token(line, " ");
-            fprintf(stdout, "This line had %d tokens\n", num_tokens);
+            command_line test;
+            test = str_filler(line, " ");
+            int i = 0;
+            while(test.command_list[i] != NULL){
+                fprintf(stdout, "%s\n", test.command_list[i]);
+                i++;
+            }
+            free_command_line(&test); 
         }
 
         free(line);
