@@ -139,6 +139,14 @@ int main(int argc, char *argv[]){
                             displayFile(spdelim.command_list[1]);
                         }
                     }
+                    else{
+                        printf("Error! Unrecognized command:");
+                        for(int i = 0; i < spdelim.num_token; i++){
+                            printf(" %s", spdelim.command_list[i]);
+                        }
+                        printf("\n");
+                        break;
+                    }
                     j++;
                 }
                 free_command_line(&spdelim);
@@ -300,6 +308,14 @@ int main(int argc, char *argv[]){
                         else{
                             displayFile(spdelim.command_list[1]);
                         }
+                    }
+                    else{
+                        fprintf(stdout, "Error! Unrecognized command:");
+                        for(int i = 0; i < spdelim.num_token; i++){
+                            fprintf(stdout, " %s", spdelim.command_list[i]);
+                        }
+                        fprintf(stdout, "\n");
+                        break;
                     }
                     j++;
                 }

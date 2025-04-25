@@ -181,5 +181,28 @@ void deleteFile(char *filename){
 }
 
 void displayFile(char *filename){
-    printf("you are displaying the contents of %s\n", filename);
+    int fd = open(filename, O_RDONLY);
+    if(fd == -1){
+        const char *err = strerror(errno);
+        write(STDOUT_FILENO, "cat error: ", 11);
+        write(STDOUT_FILENO, err, strlen(err));
+        write(STDOUT_FILENO, "\n", 1);
+        return;
+    }
+
+    char buffer[BUF_SIZE];
+    ssize_t bytesRead;
+    while((bytesRead = read(fd, buffer, BUF_SIZE)) > 0){
+        write(STDOUT_FILENO, buffer, bytesRead);
+        write(STDOUT_FILENO, "\n", 1);
+    }
+
+    if(bytesRead == -1){
+        const char *err = strerror(errno);
+        write(STDOUT_FILENO, "cat error (read): ", 18);
+        write(STDOUT_FILENO, err, strlen(err));
+        write(STDOUT_FILENO, "\n", 1);
+    }
+
+    close(fd);
 }
