@@ -12,13 +12,14 @@ int main(int argc, char *argv[]){
         ssize_t read;
         int whileparam = 0;
 
-        while(whileparam == 0){
+        while(!whileparam){
             printf(">>> ");
 
             //Get what was typed
-            read = getline(&line, &len, stdin);
+            ssize_t read = getline(&line, &len, stdin);
             if(read == -1){
-                perror(line);
+                perror("getline failed");
+                break;
             }
             line[strcspn(line, "\n")] = '\0';
             if(strcmp(line, "exit") == 0){
@@ -28,129 +29,101 @@ int main(int argc, char *argv[]){
             //-------------------------
             
             command_line scdelim = str_filler(line, ";");
-            int i = 0;
-            while(scdelim.command_list[i] != NULL){
+            for(int i = 0; scdelim.command_list[i] != NULL; i++){
                 command_line spdelim = str_filler(scdelim.command_list[i], " ");
-                int j = 0;
-                //while(spdelim.command_list[j] != NULL){
-                    if(spdelim.num_token == 0){
-                        //nothing entered
-                    }
-                    //ls
-                    else if(strcmp(spdelim.command_list[j], "ls") == 0){
-                        if(spdelim.num_token > 1){
-                            printf("Error! Unsupported paramaters for command: ls\n");
-                            break;
-                        }
-                        else{
-                            listDir();
-                        }
-                    }
-                    //pwd
-                    else if(strcmp(spdelim.command_list[j], "pwd") == 0){
-                        if(spdelim.num_token > 1){
-                            printf("Error! Unsupported paramaters for command: pwd\n");
-                            break;
-                        }
-                        else{
-                            showCurrentDir();
-                        }
-                    }
-                    //mkdir
-                    else if(strcmp(spdelim.command_list[j], "mkdir") == 0){
-                        if(spdelim.num_token < 2){
-                            printf("Error! Missing paramaters for command: mkdir\n");
-                            break;
-                        }
-                        else if(spdelim.num_token > 2){
-                            printf("Error! Unsupported paramaters for command: mkdir\n");
-                            break;
-                        }
-                        else{
-                            makeDir(spdelim.command_list[1]);
-                        }
-                    }
-                    //cd
-                    else if(strcmp(spdelim.command_list[j], "cd") == 0){
-                        if(spdelim.num_token < 2){
-                            printf("Error! Missing paramaters for command: cd\n");
-                            break;
-                        }
-                        else if(spdelim.num_token > 2){
-                            printf("Error! Unsupported paramaters for command: cd\n");
-                            break;
-                        }
-                        else{
-                            changeDir(spdelim.command_list[1]);
-                        }
-                    }
-                    //cp
-                    else if(strcmp(spdelim.command_list[j], "cp") == 0){
-                        if(spdelim.num_token < 3){
-                            printf("Error! Missing paramaters for command: cp\n");
-                            break;
-                        }
-                        else if(spdelim.num_token > 3){
-                            printf("Error! Unsupported paramaters for command: cp\n");
-                            break;
-                        }
-                        else{
-                            copyFile(spdelim.command_list[1], spdelim.command_list[2]);
-                        }
-                    }
-                    //mv
-                    else if(strcmp(spdelim.command_list[j], "mv") == 0){
-                        if(spdelim.num_token < 3){
-                            printf("Error! Missing paramaters for command: mv\n");
-                            break;
-                        }
-                        else if(spdelim.num_token > 3){
-                            printf("Error! Unsupported paramaters for command: mv\n");
-                            break;
-                        }
-                        else{
-                            moveFile(spdelim.command_list[1], spdelim.command_list[2]);
-                        }
-                    }
-                    //rm
-                    else if(strcmp(spdelim.command_list[j], "rm") == 0){
-                        if(spdelim.num_token < 2){
-                            printf("Error! Missing paramaters for command: rm\n");
-                            break;
-                        }
-                        else if(spdelim.num_token > 2){
-                            printf("Error! Unsupported paramaters for command: rm\n");
-                            break;
-                        }
-                        else{
-                            deleteFile(spdelim.command_list[1]);
-                        }
-                    }
-                    //cat
-                    else if(strcmp(spdelim.command_list[j], "cat") == 0){
-                        if(spdelim.num_token < 2){
-                            printf("Error! Missing paramaters for command: cat\n");
-                            break;
-                        }
-                        else if(spdelim.num_token > 2){
-                            printf("Error! Unsupported paramaters for command: cat\n");
-                            break;
-                        }
-                        else{
-                            displayFile(spdelim.command_list[1]);
-                        }
+                int shouldBreak = 0;
+                if(spdelim.num_token == 0){
+                    //nothing entered
+                }
+                //ls
+                else if(strcmp(spdelim.command_list[0], "ls") == 0){
+                    if(spdelim.num_token != 1){
+                        printf("Error! Unsupported paramaters for command: ls\n");
+                        shouldBreak = 1;
                     }
                     else{
-                        printf("Error! Unrecognized command:");
-                        for(int i = 0; i < spdelim.num_token; i++){
-                            printf(" %s", spdelim.command_list[i]);
-                        }
-                        printf("\n");
+                        listDir();
                     }
-                    j++;
-                //}
+                }
+                //pwd
+                else if(strcmp(spdelim.command_list[0], "pwd") == 0){
+                    if(spdelim.num_token != 1){
+                        printf("Error! Unsupported paramaters for command: pwd\n");
+                        shouldBreak = 1;
+                    }
+                    else{
+                        showCurrentDir();
+                    }
+                }
+                //mkdir
+                else if(strcmp(spdelim.command_list[0], "mkdir") == 0){
+                    if(spdelim.num_token != 2){
+                        printf("Error! Missing paramaters for command: mkdir\n");
+                        shouldBreak = 1;
+                    }
+                    else{
+                        makeDir(spdelim.command_list[1]);
+                    }
+                }
+                //cd
+                else if(strcmp(spdelim.command_list[0], "cd") == 0){
+                    if(spdelim.num_token != 2){
+                        printf("Error! Missing paramaters for command: cd\n");
+                        shouldBreak = 1;
+                    }
+                    else{
+                        changeDir(spdelim.command_list[1]);
+                    }
+                }
+                //cp
+                else if(strcmp(spdelim.command_list[0], "cp") == 0){
+                    if(spdelim.num_token != 3){
+                        printf("Error! Missing paramaters for command: cp\n");
+                        shouldBreak = 1;
+                    }
+                    else{
+                        copyFile(spdelim.command_list[1], spdelim.command_list[2]);
+                    }
+                }
+                //mv
+                else if(strcmp(spdelim.command_list[0], "mv") == 0){
+                    if(spdelim.num_token != 3){
+                        printf("Error! Missing paramaters for command: mv\n");
+                        shouldBreak = 1;
+                    }
+                    else{
+                        moveFile(spdelim.command_list[1], spdelim.command_list[2]);
+                    }
+                }
+                //rm
+                else if(strcmp(spdelim.command_list[0], "rm") == 0){
+                    if(spdelim.num_token != 2){
+                        printf("Error! Missing paramaters for command: rm\n");
+                        shouldBreak = 1;
+                    }
+                    else{
+                        deleteFile(spdelim.command_list[1]);
+                    }
+                }
+                //cat
+                else if(strcmp(spdelim.command_list[0], "cat") == 0){
+                    if(spdelim.num_token != 2){
+                        printf("Error! Missing paramaters for command: cat\n");
+                        shouldBreak = 1;
+                    }
+                    else{
+                        displayFile(spdelim.command_list[1]);
+                    }
+                }
+                else{
+                    printf("Error! Unrecognized command:");
+                    for(int i = 0; i < spdelim.num_token; i++){
+                        printf(" %s", spdelim.command_list[i]);
+                    }
+                    printf("\n");
+                }
                 free_command_line(&spdelim);
-                i++;
+                if(shouldBreak) break;
             }
             free_command_line(&scdelim);
         }
@@ -197,130 +170,101 @@ int main(int argc, char *argv[]){
 
         while((read = getline(&line, &len, input)) != -1){
             command_line scdelim = str_filler(line, ";");
-            int i = 0;
-            while(scdelim.command_list[i] != NULL){
+            for(int i = 0; scdelim.command_list[i] != NULL; i++){
                 command_line spdelim = str_filler(scdelim.command_list[i], " ");
-                int j = 0;
-                //while(spdelim.command_list[j] != NULL){
-                    if(spdelim.num_token == 0){
-                        //nothing entered
-                    }
-                    //ls
-                    else if(strcmp(spdelim.command_list[j], "ls") == 0){
-                        if(spdelim.num_token > 1){
-                            fprintf(stdout, "Error! Unsupported paramaters for command: ls\n");
-                            break;
-                        }
-                        else{
-                            listDir();
-                        }
-                    }
-                    //pwd
-                    else if(strcmp(spdelim.command_list[j], "pwd") == 0){
-                        if(spdelim.num_token > 1){
-                            fprintf(stdout, "Error! Unsupported paramaters for command: pwd\n");
-                            break;
-                        }
-                        else{
-                            showCurrentDir();
-                        }
-                    }
-                    //mkdir
-                    else if(strcmp(spdelim.command_list[j], "mkdir") == 0){
-                        if(spdelim.num_token < 2){
-                            fprintf(stdout, "Error! Missing paramaters for command: mkdir\n");
-                            break;
-                        }
-                        else if(spdelim.num_token > 2){
-                            fprintf(stdout, "Error! Unsupported paramaters for command: mkdir\n");
-                            break;
-                        }
-                        else{
-                            makeDir(spdelim.command_list[1]);
-                        }
-                    }
-                    //cd
-                    else if(strcmp(spdelim.command_list[j], "cd") == 0){
-                        if(spdelim.num_token < 2){
-                            fprintf(stdout, "Error! Missing paramaters for command: cd\n");
-                            break;
-                        }
-                        else if(spdelim.num_token > 2){
-                            fprintf(stdout, "Error! Unsupported paramaters for command: cd\n");
-                            break;
-                        }
-                        else{
-                            changeDir(spdelim.command_list[1]);
-                        }
-                    }
-                    //cp
-                    else if(strcmp(spdelim.command_list[j], "cp") == 0){
-                        if(spdelim.num_token < 3){
-                            fprintf(stdout, "Error! Missing paramaters for command: cp\n");
-                            break;
-                        }
-                        else if(spdelim.num_token > 3){
-                            fprintf(stdout, "Error! Unsupported paramaters for command: cp\n");
-                            break;
-                        }
-                        else{
-                            copyFile(spdelim.command_list[1], spdelim.command_list[2]);
-                        }
-                    }
-                    //mv
-                    else if(strcmp(spdelim.command_list[j], "mv") == 0){
-                        if(spdelim.num_token < 3){
-                            fprintf(stdout, "Error! Missing paramaters for command: mv\n");
-                            break;
-                        }
-                        else if(spdelim.num_token > 3){
-                            fprintf(stdout, "Error! Unsupported paramaters for command: mv\n");
-                            break;
-                        }
-                        else{
-                            moveFile(spdelim.command_list[1], spdelim.command_list[2]);
-                        }
-                    }
-                    //rm
-                    else if(strcmp(spdelim.command_list[j], "rm") == 0){
-                        if(spdelim.num_token < 2){
-                            fprintf(stdout, "Error! Missing paramaters for command: rm\n");
-                            break;
-                        }
-                        else if(spdelim.num_token > 2){
-                            fprintf(stdout, "Error! Unsupported paramaters for command: rm\n");
-                            break;
-                        }
-                        else{
-                            deleteFile(spdelim.command_list[1]);
-                        }
-                    }
-                    //cat
-                    else if(strcmp(spdelim.command_list[j], "cat") == 0){
-                        if(spdelim.num_token < 2){
-                            fprintf(stdout, "Error! Missing paramaters for command: cat\n");
-                            break;
-                        }
-                        else if(spdelim.num_token > 2){
-                            fprintf(stdout, "Error! Unsupported paramaters for command: cat\n");
-                            break;
-                        }
-                        else{
-                            displayFile(spdelim.command_list[1]);
-                        }
+                int shouldBreak = 0;
+                if(spdelim.num_token == 0){
+                    //nothing entered
+                }
+                //ls
+                else if(strcmp(spdelim.command_list[0], "ls") == 0){
+                    if(spdelim.num_token != 1){
+                        fprintf(stdout, "Error! Unsupported paramaters for command: ls\n");
+                        shouldBreak = 1;
                     }
                     else{
-                        fprintf(stdout, "Error! Unrecognized command:");
-                        for(int i = 0; i < spdelim.num_token; i++){
-                            fprintf(stdout, " %s", spdelim.command_list[i]);
-                        }
-                        fprintf(stdout, "\n");
-                        break;
+                        listDir();
                     }
-                    j++;
-                //}
+                }
+                //pwd
+                else if(strcmp(spdelim.command_list[0], "pwd") == 0){
+                    if(spdelim.num_token != 1){
+                        fprintf(stdout, "Error! Unsupported paramaters for command: pwd\n");
+                        shouldBreak = 1;
+                    }
+                    else{
+                        showCurrentDir();
+                    }
+                }
+                //mkdir
+                else if(strcmp(spdelim.command_list[0], "mkdir") == 0){
+                    if(spdelim.num_token != 2){
+                        fprintf(stdout, "Error! Missing paramaters for command: mkdir\n");
+                        shouldBreak = 1;
+                    }
+                    else{
+                        makeDir(spdelim.command_list[1]);
+                    }
+                }
+                //cd
+                else if(strcmp(spdelim.command_list[0], "cd") == 0){
+                    if(spdelim.num_token != 2){
+                        fprintf(stdout, "Error! Missing paramaters for command: cd\n");
+                        shouldBreak = 1;
+                    }
+                    else{
+                        changeDir(spdelim.command_list[1]);
+                    }
+                }
+                //cp
+                else if(strcmp(spdelim.command_list[0], "cp") == 0){
+                    if(spdelim.num_token != 3){
+                        fprintf(stdout, "Error! Missing paramaters for command: cp\n");
+                        shouldBreak = 1;
+                    }
+                    else{
+                        copyFile(spdelim.command_list[1], spdelim.command_list[2]);
+                    }
+                }
+                //mv
+                else if(strcmp(spdelim.command_list[0], "mv") == 0){
+                    if(spdelim.num_token != 3){
+                        fprintf(stdout, "Error! Missing paramaters for command: mv\n");
+                        shouldBreak = 1;
+                    }
+                    else{
+                        moveFile(spdelim.command_list[1], spdelim.command_list[2]);
+                    }
+                }
+                //rm
+                else if(strcmp(spdelim.command_list[0], "rm") == 0){
+                    if(spdelim.num_token != 2){
+                        fprintf(stdout, "Error! Missing paramaters for command: rm\n");
+                        shouldBreak = 1;
+                    }
+                    else{
+                        deleteFile(spdelim.command_list[1]);
+                    }
+                }
+                //cat
+                else if(strcmp(spdelim.command_list[0], "cat") == 0){
+                    if(spdelim.num_token != 2){
+                        fprintf(stdout, "Error! Missing paramaters for command: cat\n");
+                        shouldBreak = 1;
+                    }
+                    else{
+                        displayFile(spdelim.command_list[1]);
+                    }
+                }
+                else{
+                    fprintf(stdout, "Error! Unrecognized command:");
+                    for(int i = 0; i < spdelim.num_token; i++){
+                        fprintf(stdout, " %s", spdelim.command_list[i]);
+                    }
+                    fprintf(stdout, "\n");
+                }
                 free_command_line(&spdelim);
-                i++;
+                if(shouldBreak) break;
             }
             free_command_line(&scdelim);
         }
