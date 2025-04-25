@@ -115,7 +115,60 @@ void copyFile(char *sourcePath, char *destinationPath){
 }
 
 void moveFile(char *sourcePath, char *destinationPath){
-    printf("you are moving %s to %s\n", sourcePath, destinationPath);
+    int sourceFD = open(sourcePath, O_RDONLY);
+    if(sourceFD == -1){
+        const char *err = strerror(errno);
+        write(STDOUT_FILENO, "mv error (open src): ", 22);
+        write(STDOUT_FILENO, err, strlen(err));
+        write(STDOUT_FILENO, "\n", 1);
+        return;
+    }
+
+    struct stat destStat;
+    int isDir = (stat(destinationPath, &destStat) == 0 && S_ISDIR(destStat.st_mode));
+
+    char fullDestPath[PATH_MAX];
+    if(isDir){
+        const char *srcFilename = strrchr(sourcePath, '/');
+        srcFilename = srcFilename ? srcFilename + 1 : sourcePath;
+        snprintf(fullDestPath, PATH_MAX, "%s/%s", destinationPath, srcFilename);
+    }
+    else{
+        strncpy(fullDestPath, destinationPath, PATH_MAX);
+    }
+
+    int destFD = open(fullDestPath, O_WRONLY | O_CREAT | O_TRUNC, 0644);
+    if(destFD == -1){
+        const char *err = strerror(errno);
+        write(STDOUT_FILENO, "mv error (open dst): ", 22);
+        write(STDOUT_FILENO, err, strlen(err));
+        write(STDOUT_FILENO, "\n", 1);
+        close(sourceFD);
+        return;
+    }
+
+    char buffer[BUF_SIZE];
+    ssize_t bytesRead;
+    while((bytesRead = read(sourceFD, buffer, BUF_SIZE)) > 0){
+        write(destFD, buffer, bytesRead);
+    }
+
+    if(bytesRead == -1){
+        const char *err = strerror(errno);
+        write(STDOUT_FILENO, "mv error (read): ", 17);
+        write(STDOUT_FILENO, err, strlen(err));
+        write(STDOUT_FILENO, "\n", 1);
+    }
+
+    close(sourceFD);
+    close(destFD);
+
+    if(unlink(sourcePath) == 1){
+        const char *err = strerror(errno);
+        write(STDOUT_FILENO, "mv error (unlink): ", 20);
+        write(STDOUT_FILENO, err, strlen(err));
+        write(STDOUT_FILENO, "\n", 1);
+    }
 }
 
 void deleteFile(char *filename){
