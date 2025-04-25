@@ -28,6 +28,7 @@ void listDir(){
         write(STDOUT_FILENO, " ", 1);
     }
     write(STDOUT_FILENO, "\n", 1);
+    closedir(dir);
 }
 
 void showCurrentDir(){
