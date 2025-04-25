@@ -1,4 +1,4 @@
-EXEC=pseudoshell
+EXEC=pseudo-shell
 FLAGS=-g -o
 CC=gcc
 

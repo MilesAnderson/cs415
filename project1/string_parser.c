@@ -30,20 +30,16 @@ int count_token (char* buf, const char* delim){
 command_line str_filler(char* buf, const char* delim){
     command_line ret;
 
-    int j = 0;
-    while(buf[j] != '\0'){
-        if(buf[j] == '\n'){
-            buf[j] = '\0';
-            break;
-        }
-        j++;
-    }
-    ret.num_token = count_token(buf, delim);
+    char* working_copy = (char *)malloc(strlen(buf) + 1);
+    strcpy(working_copy, buf);
+    working_copy[strcspn(working_copy, "\n")] = '\0';
+
+    ret.num_token = count_token(working_copy, delim);
 
     ret.command_list = (char**)malloc(sizeof(char*) * (ret.num_token+1));
 
     char* ptr;
-    char* token = strtok_r(buf, delim, &ptr);
+    char* token = strtok_r(working_copy, delim, &ptr);
     int i = 0;
     while(token != NULL){
         ret.command_list[i] = (char*)malloc(sizeof(char) * strlen(token)+1);
@@ -52,6 +48,7 @@ command_line str_filler(char* buf, const char* delim){
         token = strtok_r(NULL, delim, &ptr);
     }
     ret.command_list[ret.num_token] = NULL;
+    free(working_copy);
     return ret;
 }
 
