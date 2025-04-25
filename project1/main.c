@@ -23,6 +23,7 @@ int main(int argc, char *argv[]){
             line[strcspn(line, "\n")] = '\0';
             if(strcmp(line, "exit") == 0){
                 whileparam++;
+                break;
             }
             //-------------------------
             
@@ -31,7 +32,7 @@ int main(int argc, char *argv[]){
             while(scdelim.command_list[i] != NULL){
                 command_line spdelim = str_filler(scdelim.command_list[i], " ");
                 int j = 0;
-                while(spdelim.command_list[j] != NULL){
+                //while(spdelim.command_list[j] != NULL){
                     if(spdelim.num_token == 0){
                         //nothing entered
                     }
@@ -145,10 +146,9 @@ int main(int argc, char *argv[]){
                             printf(" %s", spdelim.command_list[i]);
                         }
                         printf("\n");
-                        break;
                     }
                     j++;
-                }
+                //}
                 free_command_line(&spdelim);
                 i++;
             }
@@ -201,7 +201,7 @@ int main(int argc, char *argv[]){
             while(scdelim.command_list[i] != NULL){
                 command_line spdelim = str_filler(scdelim.command_list[i], " ");
                 int j = 0;
-                while(spdelim.command_list[j] != NULL){
+                //while(spdelim.command_list[j] != NULL){
                     if(spdelim.num_token == 0){
                         //nothing entered
                     }
@@ -318,7 +318,7 @@ int main(int argc, char *argv[]){
                         break;
                     }
                     j++;
-                }
+                //}
                 free_command_line(&spdelim);
                 i++;
             }
