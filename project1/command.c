@@ -172,7 +172,12 @@ void moveFile(char *sourcePath, char *destinationPath){
 }
 
 void deleteFile(char *filename){
-    printf("you are deleting %s\n", filename);
+    if (unlink(filename) == -1) {
+        const char *err = strerror(errno);
+        write(STDOUT_FILENO, "rm error: ", 10);
+        write(STDOUT_FILENO, err, strlen(err));
+        write(STDOUT_FILENO, "\n", 1);
+    }
 }
 
 void displayFile(char *filename){
