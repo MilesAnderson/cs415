@@ -60,7 +60,7 @@ void sigchld_handler(int sig){
         if(current >= n_children){
             current = 0;
         }
-        else if(i <= current){
+        else if(n_children > 0 && i <= current){
             current = (current + n_children - 1) % n_children;
         }
     }
@@ -178,7 +178,7 @@ int main(int argc, char *argv[]){
                         &child_pids[i+1],
                         (n_children - i - 1) * sizeof(pid_t));
                 n_children--;
-                if(i <= current){
+                if(n_children > 0 && i <= current){
                     current = (current + n_children - 1) % n_children;
                 }
                 break;
