@@ -16,7 +16,9 @@ static int current = 0;
 static int timeslice_sec = 1;
 
 void scheduler(int signum){
-    printf("Scheduling process %d\n", child_pids[current]);
+    if(n_children > 1){
+        printf("Scheduling process %d\n", child_pids[current]);
+    }
     kill(child_pids[current], SIGSTOP);
     current = (current + 1) % n_children;
     kill(child_pids[current], SIGCONT);
