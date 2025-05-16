@@ -8,14 +8,14 @@
 
 int main(int argc, char *argv[]){
     //Usage
-    if(argc != 2){
+    if(argc != 3){
         printf("Wrong number of arguments\n");
         exit(0);
     }
     
     //Opening file
     FILE* input;
-    input = fopen(argv[1], "r");
+    input = fopen(argv[2], "r");
     if(input == NULL){
         printf("The input file failed to open.\n");
         return 1;
