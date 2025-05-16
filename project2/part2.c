@@ -5,6 +5,7 @@
 #include<sys/wait.h>
 #include<string.h>
 #include<errno.h>
+#include<signal.h>
 
 int main(int argc, char *argv[]){
     //Usage
@@ -52,6 +53,30 @@ int main(int argc, char *argv[]){
             continue;
         }
         else if(pid == 0){
+            //Block SIGUSR1
+            sigset_t mask;
+            sigemptyset(&mask);
+            sigaddset(&mask, SIGUSR1);
+            if(sigprocmask(SIG_BLOCK, &mask, NULL) < 0){
+                perror("sigprocmask");
+                _exit(EXIT_FAILURE);
+            }
+
+            //Wait for parent to sent SIGUSR1
+            int sig;
+            if(sigwait(&mask, &sig) != 0){
+                perror("sigwait");
+                _exit(EXIT_FAILURE);
+            }
+
+            //Unblock SIGUSR1
+            sigemptyset(&mask);
+            if(sigprocmask(SIG_SETMASK, &mask, NULL) < 0){
+                perror("sigprocmask");
+                _exit(EXIT_FAILURE);
+            }
+
+            //exec
             execvp(cmd_argv[0], cmd_argv);
             perror("execvp");
             _exit(EXIT_FAILURE);
@@ -62,6 +87,27 @@ int main(int argc, char *argv[]){
     }
 
     fclose(input);
+
+    //Let children run
+    for(int i = 0; i < n_children; i++){
+        if(kill(child_pids[i], SIGUSR1) < 0){
+            perror("kill(SIGUSR1)");
+        }
+    }
+
+    //Stop the children
+    for(int i = 0; i < n_children; i++){
+        if(kill(child_pids[i], SIGSTOP) < 0){
+            perror("kill(SIGSTOP)");
+        }
+    }
+
+    //Wake the children
+    for(int i = 0; i < n_children; i++){
+        if(kill(child_pids[i], SIGCONT) < 0){
+            perror("kill(SIGCONT)");
+        }
+    }
 
     //Wait for processes
     for(int j = 0; j < n_children; j++){
