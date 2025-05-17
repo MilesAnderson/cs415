@@ -14,6 +14,8 @@ static pid_t child_pids[MAX_CHILDREN];
 static int n_children = 0;
 static int current = 0;
 static int timeslice_sec = 1;
+static long clk_tck;
+static int slice_count = 0;
 
 typedef struct{
     double cpu_sec;
@@ -21,13 +23,86 @@ typedef struct{
     unsigned long read_bytes, write_bytes;
 } proc_metrics_t;
 
-void scheduler(int signum){
-    if(n_children > 1){
-        printf("Scheduling process %d\n", child_pids[current]);
+void init_proc_utils(void){
+    clk_tck = sysconf(_SC_CLK_TCK);
+}
+
+int read_proc_metrics(pid_t pid, proc_metrics_t *m){
+    char path[64];
+    char buf[1024];
+    FILE *f;
+
+    snprintf(path, sizeof(path), "/proc/%d/stat", pid);
+    if(!(f = fopen(path, "r"))){
+        return -1;
     }
+
+    long ignored;
+    char comm[32];
+    char state;
+    long utime;
+    long stime;
+    fscanf(f,
+        "%ld %31s %c"
+        "%*d %*d %*d %*d %*d"
+        "%*u %*u %*u %*u %*u"
+        "%ld %ld",
+        &ignored, comm, &state,
+        &utime, &stime);
+    fclose(f);
+    m->cpu_sec = (utime + stime) / (double)clk_tck;
+
+    snprintf(path, sizeof(path), "/proc/%d/statm", pid);
+    if (!(f = fopen(path, "r"))) return -1;
+    long size, resident;
+    fscanf(f, "%ld %ld", &size, &resident);
+    fclose(f);
+    long page_kb = sysconf(_SC_PAGESIZE) / 1024;
+    m->rss_kb = resident * page_kb;
+
+    m->read_bytes = m->write_bytes = 0;
+    snprintf(path, sizeof(path), "/proc/%d/io", pid);
+    if ((f = fopen(path, "r"))) {
+        while (fgets(buf, sizeof(buf), f)) {
+            unsigned long val;
+            if (sscanf(buf, "read_bytes: %lu", &val) == 1) {
+                m->read_bytes = val;
+            } else if (sscanf(buf, "write_bytes: %lu", &val) == 1) {
+                m->write_bytes = val;
+            }
+        }
+        fclose(f);
+    }
+
+    return 0;
+}
+
+void print_metrics_table(void){
+    printf("\n PID    CPU(s)   RSS(KB)   R(bytes)  W(bytes)\n");
+    printf("──────────────────────────────────────────────\n");
+    for (int i = 0; i < n_children; i++) {
+        proc_metrics_t m;
+        if (read_proc_metrics(child_pids[i], &m) == 0) {
+            printf("%5d  %8.2f  %8ld  %9lu  %9lu\n",
+                   child_pids[i],
+                   m.cpu_sec,
+                   m.rss_kb,
+                   m.read_bytes,
+                   m.write_bytes);
+        }
+    }
+    printf("\n");
+}
+
+void scheduler(int signum){
+    if(n_children == 0) return;
     kill(child_pids[current], SIGSTOP);
     current = (current + 1) % n_children;
     kill(child_pids[current], SIGCONT);
+    if(++slice_count >= n_children){
+        slice_count = 0;
+        print_metrics_table();
+    }
     struct itimerval tv = {
         .it_interval = { timeslice_sec, 0},
         .it_value = { timeslice_sec, 0}
@@ -157,6 +232,8 @@ int main(int argc, char *argv[]){
     }
 
     fclose(input);
+
+    init_proc_utils();
 
     //Let children run
     for(int i = 0; i < n_children; i++){
