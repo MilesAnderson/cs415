@@ -57,25 +57,6 @@ void arm_timer(int ms){
     setitimer(ITIMER_REAL, &tv, NULL);
 }
 
-void adapt_slices(void) {
-  for (int i = 0; i < n_children; i++) {
-    proc_metrics_t m;
-    if (read_proc_metrics(children[i].pid, &m) < 0) continue;
-    double cpu_delta = m.cpu_sec - children[i].last_cpu_sec;
-    unsigned long io_delta = (m.read_bytes + m.write_bytes)
-                              - (children[i].last_read_bytes + children[i].last_write_bytes);
-    double io_equiv = io_delta / (10.0*1024.0);
-    if (cpu_delta > io_equiv) {
-      children[i].timeslice = max(MIN_SLICE, children[i].timeslice - SLICE_STEP);
-    } else {
-      children[i].timeslice = min(MAX_SLICE, children[i].timeslice + SLICE_STEP);
-    }
-    children[i].last_cpu_sec    = m.cpu_sec;
-    children[i].last_read_bytes = m.read_bytes;
-    children[i].last_write_bytes= m.write_bytes;
-  }
-}
-
 void init_proc_utils(void){
     clk_tck = sysconf(_SC_CLK_TCK);
 }
@@ -128,6 +109,25 @@ int read_proc_metrics(pid_t pid, proc_metrics_t *m){
     }
 
     return 0;
+}
+
+void adapt_slices(void) {
+  for (int i = 0; i < n_children; i++) {
+    proc_metrics_t m;
+    if (read_proc_metrics(children[i].pid, &m) < 0) continue;
+    double cpu_delta = m.cpu_sec - children[i].last_cpu_sec;
+    unsigned long io_delta = (m.read_bytes + m.write_bytes)
+                              - (children[i].last_read_bytes + children[i].last_write_bytes);
+    double io_equiv = io_delta / (10.0*1024.0);
+    if (cpu_delta > io_equiv) {
+      children[i].timeslice = max(MIN_SLICE, children[i].timeslice - SLICE_STEP);
+    } else {
+      children[i].timeslice = min(MAX_SLICE, children[i].timeslice + SLICE_STEP);
+    }
+    children[i].last_cpu_sec    = m.cpu_sec;
+    children[i].last_read_bytes = m.read_bytes;
+    children[i].last_write_bytes= m.write_bytes;
+  }
 }
 
 void print_metrics_table(void){
