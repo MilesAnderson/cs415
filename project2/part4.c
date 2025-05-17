@@ -15,6 +15,12 @@ static int n_children = 0;
 static int current = 0;
 static int timeslice_sec = 1;
 
+typedef struct{
+    double cpu_sec;
+    long rss_kb;
+    unsigned long read_bytes, write_bytes;
+} proc_metrics_t;
+
 void scheduler(int signum){
     if(n_children > 1){
         printf("Scheduling process %d\n", child_pids[current]);

@@ -83,6 +83,7 @@ int main(int argc, char *argv[]){
         }
         else{
             child_pids[n_children++] = pid;
+            printf("Forked child %d to run: %s\n", pid, cmd_argv[0]);
         }
     }
 
@@ -90,6 +91,7 @@ int main(int argc, char *argv[]){
 
     //Let children run
     for(int i = 0; i < n_children; i++){
+        printf("pid %d: SIGUSR1\n", child_pids[i]);
         if(kill(child_pids[i], SIGUSR1) < 0){
             perror("kill(SIGUSR1)");
         }
@@ -97,13 +99,17 @@ int main(int argc, char *argv[]){
 
     //Stop the children
     for(int i = 0; i < n_children; i++){
+        printf("pid %d: SIGSTOP\n", child_pids[i]);
         if(kill(child_pids[i], SIGSTOP) < 0){
             perror("kill(SIGSTOP)");
         }
     }
 
+    sleep(1);
+
     //Wake the children
     for(int i = 0; i < n_children; i++){
+        printf("pid %d: SIGCONT\n", child_pids[i]);
         if(kill(child_pids[i], SIGCONT) < 0){
             perror("kill(SIGCONT)");
         }
@@ -112,9 +118,11 @@ int main(int argc, char *argv[]){
     //Wait for processes
     for(int j = 0; j < n_children; j++){
         int status;
-        if(waitpid(child_pids[j], &status, 0) < 0){
+        pid_t pid = waitpid(child_pids[j], &status, 0);
+        if(pid < 0){
             perror("waitpid");
         }
+        printf("Child %d terminated (status %d)\n", pid, WEXITSTATUS(status));
     }
 
     exit(EXIT_SUCCESS);
