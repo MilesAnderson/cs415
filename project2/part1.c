@@ -58,6 +58,7 @@ int main(int argc, char *argv[]){
         }
         else{
             child_pids[n_children++] = pid;
+            printf("Forked child %d -> execvp(%s)\n", pid, cmd_argv[0]);
         }
     }
 
@@ -66,10 +67,23 @@ int main(int argc, char *argv[]){
     //Wait for processes
     for(int j = 0; j < n_children; j++){
         int status;
-        if(waitpid(child_pids[j], &status, 0) < 0){
+        pid_t pid = waitpid(child_pids[j], &status, 0);
+        if(pid < 0){
             perror("waitpid");
+            continue;
+        }
+        if(WIFEXITED(status)){
+            printf("Child %d exited\n", pid);
+        }
+        else if(WIFSIGNALED(status)){
+            printf("Child %d killed\n", pid);
+        }
+        else{
+            printf("Child %d ended unexpectedly", pid);
         }
     }
+
+    printf("All children have finished. Exiting.\n");
 
     exit(EXIT_SUCCESS);
 }
