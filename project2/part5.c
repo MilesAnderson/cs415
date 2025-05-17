@@ -28,11 +28,14 @@ typedef struct{
     unsigned long read_bytes, write_bytes;
 } proc_metrics_t;
 
+typedef enum { TYPE_UNKN, TYPE_CPU, TYPE_IO } work_type_t;
+
 typedef struct {
     pid_t pid;
     double last_cpu_sec;
     unsigned long last_read_bytes, last_write_bytes;
-    int timeslice;      
+    int timeslice;   
+    work_type_t last_type;   
 } child_info_t;
 
 static child_info_t children[MAX_CHILDREN];
@@ -44,7 +47,8 @@ void init_child_info(void) {
             .last_cpu_sec = 0.0,
             .last_read_bytes = 0,
             .last_write_bytes = 0,
-            .timeslice = BASE_SLICE
+            .timeslice = BASE_SLICE,
+            .last_type = TYPE_UNKN
         };
     }
 }
@@ -112,37 +116,49 @@ int read_proc_metrics(pid_t pid, proc_metrics_t *m){
 }
 
 void adapt_slices(void) {
-  for (int i = 0; i < n_children; i++) {
     proc_metrics_t m;
-    if (read_proc_metrics(children[i].pid, &m) < 0) continue;
-    double cpu_delta = m.cpu_sec - children[i].last_cpu_sec;
-    unsigned long io_delta = (m.read_bytes + m.write_bytes)
-                              - (children[i].last_read_bytes + children[i].last_write_bytes);
-    double io_equiv = io_delta / (10.0*1024.0);
-    if (cpu_delta > io_equiv) {
-      children[i].timeslice = max(MIN_SLICE, children[i].timeslice - SLICE_STEP);
-    } else {
-      children[i].timeslice = min(MAX_SLICE, children[i].timeslice + SLICE_STEP);
+    for (int i = 0; i < n_children; i++) {
+        if (read_proc_metrics(children[i].pid, &m) < 0) continue;
+
+        double cpu_delta = m.cpu_sec - children[i].last_cpu_sec;
+        unsigned long io_delta = (m.read_bytes + m.write_bytes)
+                                 - (children[i].last_read_bytes + children[i].last_write_bytes);
+        double io_equiv = io_delta / (10.0 * 1024.0);
+
+        if (cpu_delta > io_equiv) {
+            children[i].timeslice = max(MIN_SLICE, children[i].timeslice - SLICE_STEP);
+            children[i].last_type = TYPE_CPU;
+        } else {
+            children[i].timeslice = min(MAX_SLICE, children[i].timeslice + SLICE_STEP);
+            children[i].last_type = TYPE_IO;
+        }
+
+        /* save for next round */
+        children[i].last_cpu_sec     = m.cpu_sec;
+        children[i].last_read_bytes  = m.read_bytes;
+        children[i].last_write_bytes = m.write_bytes;
     }
-    children[i].last_cpu_sec    = m.cpu_sec;
-    children[i].last_read_bytes = m.read_bytes;
-    children[i].last_write_bytes= m.write_bytes;
-  }
 }
 
-void print_metrics_table(void){
-    printf("\n PID    CPU(s)   RSS(KB)   R(bytes)  W(bytes)\n");
-    printf("──────────────────────────────────────────────\n");
+void print_metrics_table(void) {
+    printf("\n PID    CPU(s)   RSS(KB)   R(bytes)  W(bytes)  Slice(ms)  Type\n");
+    printf("─────────────────────────────────────────────────────────────────\n");
     for (int i = 0; i < n_children; i++) {
         proc_metrics_t m;
-        if (read_proc_metrics(children[i].pid, &m) == 0) {
-            printf("%5d  %8.2f  %8ld  %9lu  %9lu\n",
-                   children[i].pid,
-                   m.cpu_sec,
-                   m.rss_kb,
-                   m.read_bytes,
-                   m.write_bytes);
-        }
+        if (read_proc_metrics(children[i].pid, &m) < 0) continue;
+
+        const char *type_str = children[i].last_type == TYPE_CPU ? "CPU-bound"
+                             : children[i].last_type == TYPE_IO  ? "IO-bound"
+                             :                                  "Unknown";
+
+        printf("%5d  %8.2f  %8ld  %9lu  %9lu  %9d  %s\n",
+               children[i].pid,
+               m.cpu_sec,
+               m.rss_kb,
+               m.read_bytes,
+               m.write_bytes,
+               children[i].timeslice,
+               type_str);
     }
     printf("\n");
 }
