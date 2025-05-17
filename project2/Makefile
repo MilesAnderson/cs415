@@ -22,4 +22,4 @@ part5: part5.c
 	gcc -g part5.c -o part5
 
 clean:
-	rm -rf *.dSYM iobound cpubound part1 part2 part3 part4
+	rm iobound cpubound part1 part2 part3 part4 part5
