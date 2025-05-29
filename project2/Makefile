@@ -1,10 +1,4 @@
-all: iobound cpubound part1 part2 part3 part4 part5
-
-iobound:
-	gcc -g iobound.c -o iobound
-
-cpubound:
-	gcc -g cpubound.c -o cpubound
+all: part1 part2 part3 part4 part5
 
 part1: part1.c
 	gcc -g part1.c -o part1
@@ -22,4 +16,4 @@ part5: part5.c
 	gcc -g part5.c -o part5
 
 clean:
-	rm iobound cpubound part1 part2 part3 part4 part5
+	rm part1 part2 part3 part4 part5
