@@ -7,4 +7,4 @@ park: park.c
 	gcc -f $<
 
 clean:
-	rm park
+	rm park 
