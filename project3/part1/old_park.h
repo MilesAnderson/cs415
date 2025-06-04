@@ -36,12 +36,22 @@ static pthread_mutex_t ride_mutex = PTHREAD_MUTEX_INITIALIZER;
 static int boardedCount = 0;
 static int unboardedCount = 0;
 
+static atomic_int running = 1;
+
+static atomic_int exploringCount = 0;
+static atomic_int waitingTicketCount = 0;
+static atomic_int waitingBoardCount = 0;
+static atomic_int ridingCount = 0;
+static atomic_int waitingUnboardCount = 0;
+
 
 static int elapsed_seconds(void);
 
 void enterTicketLine(void);
 
 void exitTicketLine(void);
+
+void* monitor(void *arg);
 
 void* attendant(void* arg);
 

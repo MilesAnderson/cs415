@@ -1,10 +1,10 @@
+CFLAGS = -g -Wall -pthread
+
 all: park
 
 park: park.c
-	gcc -lpthread -g $^ -o $@
-
-%.o: %.c
-	gcc -f $<
+	gcc $(CFLAGS) -o park park.c
 
 clean:
-	rm park 
+	rm -f park
+
