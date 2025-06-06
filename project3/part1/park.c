@@ -4,7 +4,7 @@
 #include <pthread.h>
 #include <time.h>
 
-#define SIM_DURATION 20
+#define MAX_RIDES 5
 
 void* car(void* arg);
 void* attendant(void* arg);
@@ -82,7 +82,7 @@ int main(int argc, char *argv[]){
     printf("- Park exploration time: 3 seconds\n");
     printf("- Car waiting period: %d seconds\n", w);
     printf("- Ride duration: %d seconds\n", r);
-    printf("- Simulation Duration: 20 seconds\n");
+    printf("- Simulation Duration: 5 rides\n");
     printf("\n");
 
     n = 1;
@@ -92,8 +92,13 @@ int main(int argc, char *argv[]){
     pthread_t cars;
     pthread_t attendants;
 
-    pthread_create(&cars, NULL, car, NULL);
-    pthread_create(&attendants, NULL, attendant, NULL);
+    int *a_arg = malloc(sizeof(int)); 
+    *a_arg = 1;
+    int *c_arg = malloc(sizeof(int));
+    *c_arg = 1;
+
+    pthread_create(&cars, NULL, car, c_arg);
+    pthread_create(&attendants, NULL, attendant, a_arg);
 
     pthread_join(attendants, NULL);
     pthread_join(cars, NULL);
@@ -115,83 +120,72 @@ static int elapsed_seconds(void){
 }
 
 void* attendant(void* arg){
-    while(elapsed_seconds() < SIM_DURATION){
-        printf("[Time: %.3d s] Attendant 1 is exploring the park.\n", elapsed_seconds());
+    int pid = *(int*)arg;
+    free(arg);
+
+    for(int i = 0; i < MAX_RIDES; i++){
+        printf("[Time: %.3d s] Attendant %d is exploring the park.\n", elapsed_seconds(), pid);
         int explore_time = (rand() % 4) + 2;
         sleep(explore_time);
-        if(elapsed_seconds() >= SIM_DURATION) break;
 
         pthread_mutex_lock(&ticket_mutex);
-        printf("[Time: %.3d s] Attendant 1 waiting in ticket queue.\n", elapsed_seconds());
-        printf("[Time: %.3d s] Attendant 1 acquired a ticket.\n", elapsed_seconds());
+        printf("[Time: %.3d s] Attendant %d waiting in ticket queue.\n", elapsed_seconds(), pid);
+        printf("[Time: %.3d s] Attendant %d acquired a ticket.\n", elapsed_seconds(), pid);
         pthread_mutex_unlock(&ticket_mutex);
-        if(elapsed_seconds() >= SIM_DURATION) break;
 
         pthread_mutex_lock(&ride_mutex);
         ride_queue_size++;
-        printf("[Time: %.3d s] Attendant 1 joined the ride queue.\n", elapsed_seconds());
+        printf("[Time: %.3d s] Attendant %d joined the ride queue.\n", elapsed_seconds(), 1);
         pthread_cond_signal(&ride_arrived_cond);
-        pthread_mutex_unlock(&ride_mutex);
-        if(elapsed_seconds() >= SIM_DURATION) break;
 
-        pthread_mutex_lock(&ride_mutex);
-        while(!boarded && elapsed_seconds() < SIM_DURATION){
+        while(!boarded){
             pthread_cond_wait(&board_cond, &ride_mutex);
         }
-        if(boarded){
-            printf("[Time: %.3d s] Attendant 1 boarded car 1.\n", elapsed_seconds());
-            boarded = 0;
-            board_ack = 1;
-            pthread_cond_signal(&board_ack_cond);
-        }
+        printf("[Time: %.3d s] Attendant %d boarded car 1.\n", elapsed_seconds(), 1);
+        boarded = 0;
+        board_ack = 1;
+        pthread_cond_signal(&board_ack_cond);
         pthread_mutex_unlock(&ride_mutex);
-        if(elapsed_seconds() >= SIM_DURATION) break;
 
         pthread_mutex_lock(&ride_mutex);
-        while(!unboarded && elapsed_seconds() < SIM_DURATION){
+        while(!unboarded){
             pthread_cond_wait(&unboard_cond, &ride_mutex);
         }
-        if(unboarded){
-            printf("[Time: %.3d s] Attendant 1 unboarded car 1.\n", elapsed_seconds());
-            unboarded = 0;
-        }
+        printf("[Time: %.3d s] Attendant %d unboarded car 1.\n", elapsed_seconds(), 1);
+        unboarded = 0;
         pthread_mutex_unlock(&ride_mutex);
     }
-
     return NULL;
 }
 
 void* car(void* arg){
-    while(elapsed_seconds() < SIM_DURATION){
+    int car_id = *(int*)arg;
+    free(arg);
+
+    for(int i = 0; i < MAX_RIDES; i++){
         pthread_mutex_lock(&ride_mutex);
-        while(ride_queue_size == 0 && elapsed_seconds() < SIM_DURATION){
+        while(ride_queue_size == 0){
             pthread_cond_wait(&ride_arrived_cond, &ride_mutex);
         }
+        printf("[Time: %.3d s] Car %d invoked load().\n", elapsed_seconds(), car_id);
+        ride_queue_size--;
+        boarded = 1;
+        pthread_cond_signal(&board_cond);
 
-        if(ride_queue_size > 0 && elapsed_seconds() < SIM_DURATION){
-            printf("[Time: %.3d s] Car 1 invoked load().\n", elapsed_seconds());
-            ride_queue_size--;
-            boarded = 1;
-            pthread_cond_signal(&board_cond);
-
-            while(!board_ack){
-                pthread_cond_wait(&board_ack_cond, &ride_mutex);
-            }
-            board_ack = 0;
-
-            printf("[Time: %.3d s] Car 1 departed with 1 passenger(s).\n", elapsed_seconds());
-            pthread_mutex_unlock(&ride_mutex);
-            sleep(r);
-
-            printf("[Time: %.3d s] Car 1 invoked unload().\n", elapsed_seconds());
-            pthread_mutex_lock(&ride_mutex);
-            unboarded = 1;
-            pthread_cond_signal(&unboard_cond);
-            pthread_mutex_unlock(&ride_mutex);
+        while(!board_ack){
+            pthread_cond_wait(&board_ack_cond, &ride_mutex);
         }
-        else{
-            pthread_mutex_unlock(&ride_mutex);
-        }
+        board_ack = 0;
+
+        printf("[Time: %.3d s] Car %d departed with 1 passenger(s).\n", elapsed_seconds(), car_id);
+        pthread_mutex_unlock(&ride_mutex);
+        sleep(r);
+
+        printf("[Time: %.3d s] Car %d invoked unload().\n", elapsed_seconds(), car_id);
+        pthread_mutex_lock(&ride_mutex);
+        unboarded = 1;
+        pthread_cond_signal(&unboard_cond);
+        pthread_mutex_unlock(&ride_mutex);
     }
     return NULL;
 }
