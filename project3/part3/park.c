@@ -333,6 +333,11 @@ void* attendant(void* arg){
         }
         printf("[Time: %.3d s] Attendant %d unboarded.\n", elapsed_seconds(), pid);
         unboard_flag[pid] = 0;
+        //Monitor Update (unboarded ride)
+        pthread_mutex_lock(&attendant_state_mutex);
+        attendant_current_state[pid] = 4;
+        pthread_mutex_unlock(&attendant_state_mutex);
+        //==============================
         pthread_mutex_unlock(&unboard_mutex[pid]);
     }
     return NULL;
@@ -497,6 +502,7 @@ void monitor_loop(void){
                 case 1: ast = "waiting_ticket"; break;
                 case 2: ast = "waiting_ride"; break;
                 case 3: ast = "in_car"; break;
+                case 4: ast = "idle"; break;
                 default: ast = "unknown"; break;
             }
             pos += snprintf(buf + pos, sizeof(buf) - pos, " Attendant%02d: %-12s\n", j, ast);

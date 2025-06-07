@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = -g -Wall -pthread
+CFLAGS = -g -pthread -lpthread
 
 OBJS = park.o thread_queue.o
 
